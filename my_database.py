@@ -6,7 +6,7 @@ with open('recipe_voorbeeld.csv') as csvfile:
 
 try:
     connection = mysql.connector.connect(host='localhost',
-                                         database='grillfest',
+                                         database='griller',
                                          user='root',
                                          password='')
     if connection.is_connected():
