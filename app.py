@@ -1,5 +1,5 @@
 # %%
-from flask import Flask, jsonify
+from flask import Flask
 import pandas as pd
 app = Flask(__name__)
 #df = pd.read_csv("recipe_voorbeeld.csv")
@@ -11,10 +11,5 @@ def read_csv():
 def recipes():
     with open('recipe_voorbeeld.csv') as csvfile:
         csvreader = pd.read_csv(csvfile)
-        data = []
-        for row in csvreader:
-            data.append(row)
-        return jsonify(data)
-    #return '<table><tr><td>{df[1]}</td><td>Maria Anders</td><td>Germany</td></tr><tr><td>Centro comercial Moctezuma</td><td>Francisco Chang</td><td>Mexico</td></tr></table>'
-
-# %%
+        df = pd.DataFrame(csvreader)
+        return df.to_json()
