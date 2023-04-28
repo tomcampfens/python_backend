@@ -1,7 +1,7 @@
 import requests, csv
 from bs4 import BeautifulSoup
 
-url = 'https://github.com/cweber/cookbook/blob/master/recipes.csv'
+url = 'https://www.epicurious.com/search/bbq?search=bbq'
 
 with open('Recipe.csv', "w", encoding="utf-8") as f:
     writer = csv.writer(f)
