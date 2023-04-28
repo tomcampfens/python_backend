@@ -7,7 +7,7 @@ with open('recipe_voorbeeld.csv') as csvfile:
     df = pd.DataFrame(csvreader)
     df["Rating"] = [3, 4]
     df["DateCreate"] = [date.today(), date.today()]
-    new_df = df[["recipe_title", "recipe_author",\
+    new_df = df[["recipe_title", "article_id",\
                 "prep_time", "recipe_description",\
                 "recipe_directions", "status",\
                 "Rating", "recipe_image",\
@@ -23,7 +23,7 @@ try:
         print("Connected to MySQL Server version ", db_Info)
         cursor = connection.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS recipes (\
-        RecipeID bigint NOT NULL,\
+        RecipeID bigint NOT NULL AUTO_INCREMENT,\
         RecipeTitle varchar(255),\
         UserId bigint,\
         PrepTime bigint,\
@@ -34,32 +34,40 @@ try:
         Foto varchar(255),\
         Intro varchar(255),\
         Diet enum('Dessert', 'vis', 'vlees'),\
-        DateCreate datetime,\
+        DateCreate datetime default now(),\
         PRIMARY KEY(RecipeID));")
         cursor.execute("select * from recipes")
         record = cursor.fetchall()
         print("You're connected to database: ", record)
-        for x in new_df["recipe_title"]:
-            rows = len(record)
+        rows = len(record)
+        for x in range(0, len(new_df["recipe_title"])):
             if rows != 0:
-                if x not in record[1]: #mss geen dubbele loop nodig, aan csv vragem.
-                    print("niet hetzelfde, toevoegen!")
+                cursor.execute("select * from recipes")
+                record = cursor.fetchall()
+                if new_df["recipe_title"][x] not in [z[1] for z in record]: #mss geen dubbele loop nodig, aan csv vragem.
+                    print('oke, nieuwe!')
+                    lists = [new_df["recipe_title"][x],new_df["article_id"][x],new_df["prep_time"][x],new_df["recipe_description"][x],new_df["recipe_directions"][x], new_df["status"][x], new_df["Rating"][x], new_df["recipe_image"][x], new_df["recipe_note"][x], new_df["recipe_category"][x], new_df["DateCreate"][x]]
+                    sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
+                       `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
+                       `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
+                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ str(lists[2]) + "','"+ lists[3] + "','"+ lists[4] + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ str(lists[7]) + "','" + lists[8] + "','" +  lists[9] + "', now());"
+                    print(sqlcode)
+                    cursor.execute(sqlcode) 
+                    rows +=1
+                else:
+                    print("HOHO, hetzelfde")
             else:
                 print("lege lijst, voeg toe")
-                for y in range(0, len(new_df)):
-                    lists = [new_df["recipe_title"][y],new_df["recipe_author"][y],new_df["prep_time"][y],new_df["recipe_description"][y],new_df["recipe_directions"][y], new_df["status"][y], new_df["Rating"][y], new_df["recipe_image"][y], new_df["recipe_note"][y], new_df["recipe_category"][y], new_df["DateCreate"][y]]
-                    sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
-                                `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
-                                `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                                 VALUES ("+ lists[0] + ","+ lists[1] + ","+ str(lists[2]) + ","+ lists[3] + ","+ lists[4] + ","+ str(lists[5]) + ","+ str(lists[6]) + ","+ str(lists[7]) + ",",  lists[8] + "," +  lists[9] + ",NOW());"
-                    print(sqlcode)
-                    cursor.execute("""INSERT INTO `recipes` (`RecipeTitle`, `UserId`,
-                                   `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,
-                                   `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)
-                                   VALUES ('"""+ lists[0] + "','"+ lists[1] + "','"+ str(lists[2]) + "','"+ lists[3] + "','"+ lists[4] + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ str(lists[7]) + "','",  lists[8] + "','" +  lists[9] + "','NOW()');")
-
+                lists = [new_df["recipe_title"][x],new_df["article_id"][x],new_df["prep_time"][x],new_df["recipe_description"][x],new_df["recipe_directions"][x], new_df["status"][x], new_df["Rating"][x], new_df["recipe_image"][x], new_df["recipe_note"][x], new_df["recipe_category"][x], new_df["DateCreate"][x]]
+                sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
+                       `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
+                       `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
+                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ str(lists[2]) + "','"+ lists[3] + "','"+ lists[4] + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ str(lists[7]) + "','" + lists[8] + "','" +  lists[9] + "', now());"
+                print(sqlcode)
+                cursor.execute(sqlcode)
+                rows +=1
                 # the connection is not autocommited by default. So we must commit to save our changes.
-                connection.commit()              
+            connection.commit()              
             print(x)
 
 except mysql.connector.Error as e:
