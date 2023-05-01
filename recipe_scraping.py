@@ -1,41 +1,67 @@
+# %% Extracting data from a website like allrecipes.
 import requests, csv
 from bs4 import BeautifulSoup
+import json
 
 def getInfoVanDetail(nwurl):
-    print("we gaan deze beoeken", nwurl)
+    print("we gaan deze bezoeken", nwurl)
+
 
 def getallurl(zoekterm):
     page = requests.get('https://www.allrecipes.com/search?q='+zoekterm)
     dehtml = BeautifulSoup(page.content, 'html.parser')
-
     delijst = dehtml.find(id='search-results__content_1-0')
-
-    #print(delijst.prettify())
-    #print(delijst.find('a')['href'])
+    lijsteen = []
+    cardurl = ''
     for card in delijst.find_all('a'):
-        getInfoVanDetail(card['href'])
+        cardurl = card['href']
+        getInfoVanDetail(cardurl)
+        lijsteen.append(cardurl)
+    return lijsteen
 
-getallurl('cheese')
+urllist = getallurl('bbq')
+# %%
 print('==============================')
-getallurl('beef')
-url = 'https://www.allrecipes.com/recipe/'
 
-extents = ['20608/super-simple-oven-barbequed-chicken/']
+def checkrecipe(url):
+    recpage = requests.get(url)
+    rechtml = BeautifulSoup(recpage.content, 'html.parser')
+    reclijst = rechtml.find(id="allrecipes-schema_1-0", attrs={'type':'application/ld+json'})
+    #['headline']
+    #print(reclijst)
+    return reclijst
 
-for i in range(0,len(extents)):
-    total_url = url + extents[i]
-    with open('Recipe.csv', "w", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Title", "Directions", "Quantity","Unit01", "Ingredient01", "Quantity02", "Unit02", "Ingredient02"])
+def readrecipecontent():
+    #for loop
+    reclijst = checkrecipe(urllist[0])
+    for data in reclijst:
+        recipecontent = json.loads(data.string)
+    
+    return recipecontent
 
-        while True:
-            html = requests.get(total_url)
-            soup = BeautifulSoup(html.content, 'html.parser')
-            for row in soup.find('h1').text:
-                #writer.writerow([c.text if c.text else '' for c in row.find('td')])
-                print(row)
+recipecontent = readrecipecontent()
+print(json.dumps(recipecontent, indent=4))
 
-            if soup.select_one('li.active + li a'):
-                total_url = soup.select_one('li.active + li a')['href']
-            else:
-                break
+
+# %%
+#for url in urllist:
+#    checkrecipe(url)
+#    print('nice one')
+# %%
+with open('Recipe.csv', "w", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "mealtype", "Rating", "Photo", "Intro", "diettype"])
+                                                                               #should be recipeInstructions                                 
+    writer.writerow([recipecontent['headline'], 0, recipecontent['totalTime'], recipecontent['description'], \
+                     'empty', recipecontent['headline'], recipecontent['headline'], recipecontent['headline'],\
+                        recipecontent[''], recipecontent['description'], recipecontent['headline']])
+        #html = requests.get(total_url)
+        #soup = BeautifulSoup(html.content, 'html.parser')
+        #for row in soup.find('h1').text:
+            #writer.writerow([c.text if c.text else '' for c in row.find('td')])
+        #    print(row)
+
+        #if soup.select_one('li.active + li a'):
+        #    total_url = soup.select_one('li.active + li a')['href']
+        #else:
+        #    break
