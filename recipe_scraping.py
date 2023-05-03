@@ -59,8 +59,7 @@ def readrecipecontent():
 with open('Recipe.csv', "w", encoding="utf-16") as f:
     writer = csv.writer(f,delimiter=',',quotechar="'")
     writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "mealtype", "Rating", "Photo", "Intro", "diettype"])
-                                                             #still needs some stuff done above: It will                                                                                                                 #still needs some stuff done above: It will                                                              #still needs some stuff done above: It will probably
-  
+    
     for url in urllist:                                                                            #should be recipeInstructions    
         recipecontent = readrecipecontent(url)
         print(json.dumps(recipecontent, indent=4))                             
@@ -68,3 +67,4 @@ with open('Recipe.csv', "w", encoding="utf-16") as f:
                             #1, 1, recipecontent[0]['recipeCategory'], list(recipecontent[0]['aggregateRating'].values())[1],\
                             #list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
         # %%
+
