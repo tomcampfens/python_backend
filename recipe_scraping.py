@@ -1,9 +1,11 @@
+#%%
 import requests, csv
 from bs4 import BeautifulSoup
 
 def getInfoVanDetail(nwurl):
     print("we gaan deze beoeken", nwurl)
 
+#%%
 def getallurl(zoekterm):
     page = requests.get('https://www.allrecipes.com/search?q='+zoekterm)
     dehtml = BeautifulSoup(page.content, 'html.parser')
