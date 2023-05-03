@@ -31,16 +31,15 @@ def checkrecipe(url):
     #print(reclijst)
     return reclijst
 
-def readrecipecontent():
+def readrecipecontent(url):
     #for loop
-    reclijst = checkrecipe(urllist[0])
+    
+    reclijst = checkrecipe(url)
     for data in reclijst:
         recipecontent = json.loads(data.string)
     
     return recipecontent
 
-recipecontent = readrecipecontent()
-print(json.dumps(recipecontent, indent=4))
 
 
 # %%
@@ -48,20 +47,22 @@ print(json.dumps(recipecontent, indent=4))
 #    checkrecipe(url)
 #    print('nice one')
 # %%
-with open('Recipe.csv', "w", encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "mealtype", "Rating", "Photo", "Intro", "diettype"])
-                                                                               #should be recipeInstructions                                 
-    writer.writerow([recipecontent['headline'], 0, recipecontent['totalTime'], recipecontent['description'], \
-                     'empty', recipecontent['headline'], recipecontent['headline'], recipecontent['headline'],\
-                        recipecontent[''], recipecontent['description'], recipecontent['headline']])
-        #html = requests.get(total_url)
-        #soup = BeautifulSoup(html.content, 'html.parser')
-        #for row in soup.find('h1').text:
-            #writer.writerow([c.text if c.text else '' for c in row.find('td')])
-        #    print(row)
+#instructions = []
 
-        #if soup.select_one('li.active + li a'):
-        #    total_url = soup.select_one('li.active + li a')['href']
-        #else:
-        #    break
+#for i in range(0,len(recipecontent[0]['recipeInstructions'])):
+#    instructions += [list(recipecontent[0]['recipeInstructions'][i].values())[5]]
+    
+
+#%%
+
+with open('Recipe.csv', "w", encoding="utf-16") as f:
+    writer = csv.writer(f,delimiter=',',quotechar="'")
+    writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "mealtype", "Rating", "Photo", "Intro", "diettype"])
+    
+    for url in urllist:                                                                            #should be recipeInstructions    
+        recipecontent = readrecipecontent(url)
+        print(json.dumps(recipecontent, indent=4))                             
+        #writer.writerow([recipecontent[0]['headline'], 0, recipecontent[0]['totalTime'], list(recipecontent[0]['recipeInstructions'][0].values())[2], \
+                            #1, 1, recipecontent[0]['recipeCategory'], list(recipecontent[0]['aggregateRating'].values())[1],\
+                            #list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
+        # %%
