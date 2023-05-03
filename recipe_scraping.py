@@ -55,13 +55,4 @@ with open('Recipe.csv', "w", encoding="utf-8") as f:
     writer.writerow([recipecontent['headline'], 0, recipecontent['totalTime'], recipecontent['description'], \
                      'empty', recipecontent['headline'], recipecontent['headline'], recipecontent['headline'],\
                         recipecontent[''], recipecontent['description'], recipecontent['headline']])
-        #html = requests.get(total_url)
-        #soup = BeautifulSoup(html.content, 'html.parser')
-        #for row in soup.find('h1').text:
-            #writer.writerow([c.text if c.text else '' for c in row.find('td')])
-        #    print(row)
-
-        #if soup.select_one('li.active + li a'):
-        #    total_url = soup.select_one('li.active + li a')['href']
-        #else:
-        #    break
+#still needs some stuff done above: It will probably
