@@ -31,10 +31,10 @@ def checkrecipe(url):
     #print(reclijst)
     return reclijst
 
-def readrecipecontent(url):
+
+def readrecipecontent():
     #for loop
-    
-    reclijst = checkrecipe(url)
+    reclijst = checkrecipe(urllist[0])
     for data in reclijst:
         recipecontent = json.loads(data.string)
     
@@ -47,6 +47,7 @@ def readrecipecontent(url):
 #    checkrecipe(url)
 #    print('nice one')
 # %%
+
 #instructions = []
 
 #for i in range(0,len(recipecontent[0]['recipeInstructions'])):
@@ -66,3 +67,4 @@ with open('Recipe.csv', "w", encoding="utf-16") as f:
                             #1, 1, recipecontent[0]['recipeCategory'], list(recipecontent[0]['aggregateRating'].values())[1],\
                             #list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
         # %%
+
