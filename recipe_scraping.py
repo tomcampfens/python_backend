@@ -6,7 +6,6 @@ import json
 def getInfoVanDetail(nwurl):
     print("we gaan deze bezoeken", nwurl)
 
-
 def getallurl(zoekterm):
     page = requests.get('https://www.allrecipes.com/search?q='+zoekterm)
     dehtml = BeautifulSoup(page.content, 'html.parser')
@@ -20,51 +19,35 @@ def getallurl(zoekterm):
     return lijsteen
 
 urllist = getallurl('bbq')
-# %%
-print('==============================')
 
 def checkrecipe(url):
     recpage = requests.get(url)
     rechtml = BeautifulSoup(recpage.content, 'html.parser')
     reclijst = rechtml.find(id="allrecipes-schema_1-0", attrs={'type':'application/ld+json'})
-    #['headline']
-    #print(reclijst)
     return reclijst
 
-
-def readrecipecontent():
+def readrecipecontent(url):
     #for loop
-    reclijst = checkrecipe(urllist[0])
+    reclijst = checkrecipe(url)
     for data in reclijst:
         recipecontent = json.loads(data.string)
-    
-    return recipecontent
-
-
-
-# %%
-#for url in urllist:
-#    checkrecipe(url)
-#    print('nice one')
-# %%
-
-#instructions = []
-
-#for i in range(0,len(recipecontent[0]['recipeInstructions'])):
-#    instructions += [list(recipecontent[0]['recipeInstructions'][i].values())[5]]
-    
-
+    return recipecontent   
 #%%
-
+instructions = []
+u = 0
 with open('Recipe.csv', "w", encoding="utf-16") as f:
     writer = csv.writer(f,delimiter=',',quotechar="'")
     writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "mealtype", "Rating", "Photo", "Intro", "diettype"])
     
-    for url in urllist:                                                                            #should be recipeInstructions    
+    for url in urllist: 
         recipecontent = readrecipecontent(url)
-        print(json.dumps(recipecontent, indent=4))                             
-        #writer.writerow([recipecontent[0]['headline'], 0, recipecontent[0]['totalTime'], list(recipecontent[0]['recipeInstructions'][0].values())[2], \
-                            #1, 1, recipecontent[0]['recipeCategory'], list(recipecontent[0]['aggregateRating'].values())[1],\
-                            #list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
-        # %%
+        print(json.dumps(recipecontent, indent=4)) 
+        for i in range(0,len(recipecontent[0]['recipeInstructions'])):
+            u = len(list(recipecontent[0]['recipeInstructions'][i].values())) - 1
+            instructions += [list(recipecontent[0]['recipeInstructions'][i].values())[u]] 
+        
+        writer.writerow([recipecontent[0]['headline'], 0, recipecontent[0]['totalTime'], instructions, \
+                        1, 1, recipecontent[0]['recipeCategory'], list(recipecontent[0]['aggregateRating'].values())[1],\
+                        list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
+        instructions = []
 
