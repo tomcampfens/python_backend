@@ -43,10 +43,11 @@ def readrecipecontent(url):
         recipecontent = json.loads(data.string)
     return recipecontent   
 #%%
-instructions = []
+instructions = ""
+instruction = ""
 u = 0
-with open('Recipe.csv', "w", encoding="utf-16") as f:
-    writer = csv.writer(f,delimiter=',',quotechar="'")
+with open('Recipe.csv', "w", encoding="utf-8") as f:
+    writer = csv.writer(f,delimiter=',')
     writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "Rating", "Photo", "Intro", "diettype"])
     
     for url in urlrec: 
@@ -54,10 +55,24 @@ with open('Recipe.csv', "w", encoding="utf-16") as f:
         print(json.dumps(recipecontent, indent=4)) 
         for i in range(0,len(recipecontent[0]['recipeInstructions'])):
             u = len(list(recipecontent[0]['recipeInstructions'][i].values())) - 1
-            instructions += [list(recipecontent[0]['recipeInstructions'][i].values())[u]] 
-
-        writer.writerow([recipecontent[0]['headline'], 0, recipecontent[0]['totalTime'], instructions, \
+            instruction = list(recipecontent[0]['recipeInstructions'][i].values())[u] 
+            for char in instruction:
+                char = char.replace('"', "'")
+                char = char.replace(",", "@")
+            instructions += instruction
+            instructions = instructions.replace(",", "@")
+        instructions = '"{0}"'.format(instructions)
+        description = recipecontent[0]['description']
+        description = description.replace(",", "@")
+        description = description.replace('"', "'")
+        description = description.replace("&#39;", "$")
+        description = '"{0}"'.format(description)
+        image = '"{0}"'.format(list(recipecontent[0]['image'].values())[1])
+        recipeTitle = recipecontent[0]['headline']
+        recipeTitle = recipeTitle.replace("&#39;", "$")
+        #print(instructions)
+        writer.writerow([recipeTitle, 0, recipecontent[0]['totalTime'],instructions, \
                         1, 1, list(recipecontent[0]['aggregateRating'].values())[1],\
-                        list(recipecontent[0]['image'].values())[1], recipecontent[0]['description'], 'vlees'])
-        instructions = []
+                        image, description, 'vlees'])
+        instructions = ""
 

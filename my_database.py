@@ -1,18 +1,19 @@
+# %%
 import mysql.connector
 import pandas as pd
 from datetime import date
 
-with open('recipe_voorbeeld.csv') as csvfile:
-    csvreader = pd.read_csv(csvfile)
+with open('Recipe.csv', encoding='utf-8') as csvfile:
+    csvreader = pd.read_csv(csvfile, delimiter=",", quotechar='"')
     df = pd.DataFrame(csvreader)
-    df["Rating"] = [3, 4]
-    df["DateCreate"] = [date.today(), date.today()]
-    new_df = df[["recipe_title", "article_id",\
-                "prep_time", "recipe_description",\
-                "recipe_directions", "status",\
-                "Rating", "recipe_image",\
-                "recipe_note", "recipe_category", "DateCreate"]]
-
+    #df["Rating"] = [3, 4]
+    #df["DateCreate"] = [date.today(), date.today()]
+    new_df = df[["Title", "UserID",\
+                "Cookingtime", "Cookingdescription",\
+                "cookingutensilsID", "BbqID",\
+                "Rating", "Photo",\
+                "Intro", "diettype"]]
+#%%
 try:
     connection = mysql.connector.connect(host='localhost',
                                          database='griller',
@@ -40,17 +41,17 @@ try:
         record = cursor.fetchall()
         print("You're connected to database: ", record)
         rows = len(record)
-        for x in range(0, len(new_df["recipe_title"])):
+        for x in range(0, len(new_df["Title"])):
             if rows != 0:
                 cursor.execute("select * from recipes")
                 record = cursor.fetchall()
-                if new_df["recipe_title"][x] not in [z[1] for z in record]: #mss geen dubbele loop nodig, aan csv vragem.
+                if new_df["Title"][x] not in [z[1] for z in record]: #mss geen dubbele loop nodig, aan csv vragem.
                     print('oke, nieuwe!')
-                    lists = [new_df["recipe_title"][x],new_df["article_id"][x],new_df["prep_time"][x],new_df["recipe_description"][x],new_df["recipe_directions"][x], new_df["status"][x], new_df["Rating"][x], new_df["recipe_image"][x], new_df["recipe_note"][x], new_df["recipe_category"][x], new_df["DateCreate"][x]]
+                    lists = [new_df["Title"][x],new_df["UserID"][x],new_df["Cookingtime"][x],new_df["Cookingdescription"][x],new_df["cookingutensilsID"][x], new_df["BbqID"][x], new_df["Rating"][x], new_df["Photo"][x], new_df["Intro"][x], new_df["diettype"][x]]
                     sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
                        `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
                        `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ str(lists[2]) + "','"+ lists[3] + "','"+ lists[4] + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ str(lists[7]) + "','" + lists[8] + "','" +  lists[9] + "', now());"
+                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ lists[2] + "','"+ lists[3] + "','"+ str(lists[4]) + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ lists[7] + "','" + lists[8] + "','" +  lists[9] + "', now());"
                     print(sqlcode)
                     cursor.execute(sqlcode) 
                     rows +=1
@@ -58,11 +59,11 @@ try:
                     print("HOHO, hetzelfde")
             else:
                 print("lege lijst, voeg toe")
-                lists = [new_df["recipe_title"][x],new_df["article_id"][x],new_df["prep_time"][x],new_df["recipe_description"][x],new_df["recipe_directions"][x], new_df["status"][x], new_df["Rating"][x], new_df["recipe_image"][x], new_df["recipe_note"][x], new_df["recipe_category"][x], new_df["DateCreate"][x]]
+                lists = [new_df["Title"][x],new_df["UserID"][x],new_df["Cookingtime"][x],new_df["Cookingdescription"][x],new_df["cookingutensilsID"][x], new_df["BbqID"][x], new_df["Rating"][x], new_df["Photo"][x], new_df["Intro"][x], new_df["diettype"][x]]
                 sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
                        `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
                        `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ str(lists[2]) + "','"+ lists[3] + "','"+ lists[4] + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ str(lists[7]) + "','" + lists[8] + "','" +  lists[9] + "', now());"
+                        VALUES ('"+ lists[0] + "','"+ str(lists[1]) + "','"+ lists[2] + "','"+ lists[3] + "','"+ str(lists[4]) + "','"+ str(lists[5]) + "','"+ str(lists[6]) + "','"+ lists[7] + "','" + lists[8] + "','" +  lists[9] + "', now());"
                 print(sqlcode)
                 cursor.execute(sqlcode)
                 rows +=1
@@ -77,3 +78,4 @@ finally:
 
 cursor.close()
 connection.close()
+# %%
