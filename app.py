@@ -14,7 +14,7 @@ def read_csv():
 
 @app.route("/recipes")
 def recipes():
-    with open('recipe_voorbeeld.csv') as csvfile:
+    with open('Recipe.csv') as csvfile:
         csvreader = pd.read_csv(csvfile)
         df = pd.DataFrame(csvreader)
         return df.to_json()
