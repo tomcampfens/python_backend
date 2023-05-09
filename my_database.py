@@ -1,7 +1,6 @@
 # %%
 import mysql.connector
 import pandas as pd
-from datetime import date
 
 with open('Recipe.csv', encoding='utf-8') as csvfile:
     csvreader = pd.read_csv(csvfile, delimiter=",", quotechar='"')
@@ -13,6 +12,7 @@ with open('Recipe.csv', encoding='utf-8') as csvfile:
                 "cookingutensilsID", "BbqID",\
                 "Rating", "Photo",\
                 "Intro", "diettype"]]
+    new_df["Rating"] = new_df["Rating"].replace(".", ",")
 #%%
 try:
     connection = mysql.connector.connect(host='localhost',
@@ -27,11 +27,11 @@ try:
         RecipeID bigint NOT NULL AUTO_INCREMENT,\
         RecipeTitle varchar(255),\
         UserId bigint,\
-        PrepTime bigint,\
+        PrepTime varchar(255),\
         PrepText varchar(255),\
         CookAttireId bigint,\
         BBQId bigint,\
-        Rating bigint,\
+        Rating double,\
         Foto varchar(255),\
         Intro varchar(255),\
         Diet enum('Dessert', 'vis', 'vlees'),\
