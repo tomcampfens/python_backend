@@ -1,7 +1,9 @@
 # %%
-import requests, csv
+import requests
 from bs4 import BeautifulSoup
 import json
+import pandas as pd
+
 from flask import Flask
 #from flask import Flask
 from flask_cors import CORS
@@ -50,15 +52,8 @@ def read_csv():
             recipecontent = json.loads(data.string)
         return recipecontent   
 
-    instructions = ""
-    instruction = ""
-    u = 0
-    with open('Recipe.csv', "w", encoding="utf-8") as f:
-        writer = csv.writer(f,delimiter=',')
-        writer.writerow(["Title", "UserID", "Cookingtime","Cookingdescription", "cookingutensilsID", "BbqID", "Rating", "Photo", "Intro", "diettype"])
-        
-        for url in urlrec: 
-            recipecontent = readrecipecontent(url)
+    for url in urlrec: 
+        recipecontent = readrecipecontent(url)
     return recipecontent
 
 @app.route("/recipes")
