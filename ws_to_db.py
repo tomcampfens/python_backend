@@ -140,7 +140,7 @@ try:
         IngredientID bigint NOT NULL AUTO_INCREMENT,\
         Name varchar(255),\
         PRIMARY KEY(IngredientID));")
-        cursor.execute("select * from recipes")
+        cursor.execute("select * from ingredients")
         record2 = cursor.fetchall()
         rows2 = len(record2)
         for url in urlrec:
@@ -150,24 +150,24 @@ try:
                 ingredient_imp_list = re.split('\s', ingredientlist[0])
                 ingredient_imp = ingredient_imp_list[-1]
                 if rows2 != 0:
-                    cursor.execute("select * from recipes")
+                    cursor.execute("select * from ingredients")
                     record2 = cursor.fetchall()
                     if ingredient_imp not in [z2[1] for z2 in record2]:
                         print('nieuwe rij')
                         sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                    VALUES ('" + ingredient_imp + ");"
+                                    VALUES ('" + ingredient_imp + "');"
                         #print(sqlcode)
                         cursor.execute(sqlcode) 
-                        rows +=1
+                        rows2 +=1
                     else:
                         print("HOHO, hetzelfde")
                 else:
                     print("Lege lijst, voeg toe")
                     sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                    VALUES ('" + ingredient_imp + ");"
+                                    VALUES ('" + ingredient_imp + "');"
                         #print(sqlcode)
                     cursor.execute(sqlcode) 
-                    rows +=1
+                    rows2 +=1
                 connection.commit()
             
      
@@ -176,6 +176,6 @@ except mysql.connector.Error as e:
 finally:
     print("MySQL connection is closed")
 
-cursor.close()
-connection.close()
+    cursor.close()
+    connection.close()
 # %%
