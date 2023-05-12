@@ -58,10 +58,13 @@ instructions = ""
 instruction = ""
 description = ""
 try:
-    connection = mysql.connector.connect(host='localhost',
-                                         database='griller',
-                                         user='root',
-                                         password='')
+    connection = cnx = mysql.connector.connect(user="yc2304", 
+                                               password="abcd12!$", 
+                                               host="pythonbackend.mysql.database.azure.com", 
+                                               port=3306, 
+                                               database="pythonbackend", 
+                                               ssl_ca="{ca-cert filename}", 
+                                               ssl_disabled=False)
     if connection.is_connected():
         # Here we start with creating a recipe table
         db_Info = connection.get_server_info()

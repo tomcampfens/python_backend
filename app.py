@@ -2,7 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-import re
+import pandas as pd
 
 from flask import Flask
 from flask_mysqldb import MySQL
@@ -56,138 +56,33 @@ def checkurl(url):
         print(False)
         return url
     
-@app.route("/")
-def read_csv():
-    urllist = getallurl('beef')
-    urlrec = []
-    #count = 0
-
-    for url in urllist:
-        if checkurl(url) != None:
-            urlrec.append(checkurl(url))
-        else:
-            pass
-        
-    # Writing data to DataBase in SQL.
-    instructions = ""
-    instruction = ""
-    description = ""
-    # Here we start with creating a recipe table
-    #db_Info = mysql.connection.get_server_info()
-    #print("Connected to MySQL Server version ", db_Info)
-    cursor = mysql.connection.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS recipes (\
-    RecipeID bigint NOT NULL AUTO_INCREMENT,\
-    RecipeTitle varchar(255),\
-    UserId bigint,\
-    PrepTime varchar(255),\
-    PrepText varchar(255),\
-    CookAttireId bigint,\
-    BBQId bigint,\
-    Rating double,\
-    Foto varchar(255),\
-    Intro varchar(255),\
-    Diet enum('Dessert', 'vis', 'vlees'),\
-    DateCreate datetime default now(),\
-    PRIMARY KEY(RecipeID));")
-    cursor.execute("select * from recipes")
-    record = cursor.fetchall()
-    #print("You're connected to database: ", record)
-    rows = len(record)
-
-    for url in urlrec: 
-        recipecontent = readrecipecontent(url)
-        #print(json.dumps(recipecontent, indent=4))
-        for i in range(0,len(recipecontent[0]['recipeInstructions'])):
-            u = len(list(recipecontent[0]['recipeInstructions'][i].values())) - 1
-            instruction = list(recipecontent[0]['recipeInstructions'][i].values())[u] 
-            instructions += instruction
-            instructions = instructions.replace(",", "@")
-        instructions = '"{0}"'.format(instructions)
-        description = recipecontent[0]['description']
-        description = description.replace(",", "@")
-        description = description.replace('"', "'")
-        description = description.replace("&#39;", "$")
-        description = '"{0}"'.format(description)
-        image = '"{0}"'.format(list(recipecontent[0]['image'].values())[1])
-        recipeTitle = recipecontent[0]['headline']
-        recipeTitle = recipeTitle.replace("&#39;", "$")
-
-        df = [recipeTitle, 0, recipecontent[0]['totalTime'],instructions, \
-            1, 1, list(recipecontent[0]['aggregateRating'].values())[1],\
-            image, description, 'vlees']
-        if rows != 0:
-            cursor.execute("select * from recipes")
-            record = cursor.fetchall()
-            if df[0] not in [z[1] for z in record]: #mss geen dubbele loop nodig, aan csv vragem.
-                print('oke, nieuwe!')
-                sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
-                `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
-                `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                    VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', now());"
-                #print(sqlcode)
-                cursor.execute(sqlcode) 
-                rows +=1
-            else:
-                print("HOHO, hetzelfde")
-        else:
-            print("lege lijst, voeg toe")
-            sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
-                `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
-                `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', now());"
-            #print(sqlcode)
-            cursor.execute(sqlcode)
-            rows +=1
-            # the connection is not autocommited by default. So we must commit to save our changes.
-        mysql.connection.commit()              
-        description = ""
-        instructions = ""
-    
-    #Here we start creatinge and filling an ingredient table
-    cursor.execute("CREATE TABLE IF NOT EXISTS ingredients (\
-    IngredientID bigint NOT NULL AUTO_INCREMENT,\
-    Name varchar(255),\
-    PRIMARY KEY(IngredientID));")
-    cursor.execute("select * from ingredients")
-    record2 = cursor.fetchall()
-    rows2 = len(record2)
-    for url in urlrec:
-        recipecontent = readrecipecontent(url)
-        for ingredient in recipecontent[0]["recipeIngredient"]:
-            ingredientlist = re.split(',', ingredient)
-            ingredient_imp_list = re.split('\s', ingredientlist[0])
-            ingredient_imp = ingredient_imp_list[-1]
-            if rows2 != 0:
-                cursor.execute("select * from ingredients")
-                record2 = cursor.fetchall()
-                if ingredient_imp not in [z2[1] for z2 in record2]:
-                    print('nieuwe rij')
-                    sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                VALUES ('" + ingredient_imp + "');"
-                    #print(sqlcode)
-                    cursor.execute(sqlcode) 
-                    rows2 +=1
-                else:
-                    print("HOHO, hetzelfde")
-            else:
-                print("Lege lijst, voeg toe")
-                sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                VALUES ('" + ingredient_imp + "');"
-                    #print(sqlcode)
-                cursor.execute(sqlcode) 
-                rows2 +=1
-            mysql.connection.commit()
-            
-
-    print("MySQL connection is closed")
-
-    cursor.close()
-    #mysql.connection.close()
-    return "Done"
-
-@app.route("/recipes")
+@app.route("/recipes", methods = ["GET","POST"])
 def recipes():
+    cursor = mysql.connection.cursor()
+    record = cursor.execute("select * from recipes")
+    recipes = cursor.fetchall()
+    df = pd.DataFrame(recipes)
+    result = df.to_json()
+    parsed = json.loads(result)
+    recjson = json.dumps(parsed, indent=4, default=str)
+    print("MySQL connection is closed")
+    cursor.close()
+    return recjson
+
+@app.route("/ingredients", methods = ["GET","POST"])
+def ingredients():
+    cursor = mysql.connection.cursor()
+    record = cursor.execute("select * from ingredients")
+    ingredients = cursor.fetchall()
+    df = pd.DataFrame(ingredients)
+    result = df.to_json()
+    parsed = json.loads(result)
+    ingjson = json.dumps(parsed, indent=4, default=str)
+    cursor.close()
+    return ingjson
+
+@app.route("/dump")
+def dump():
     with open('griller.json') as f:
         q = json.loads(f.read())
     return json.dumps(q, indent = 4)
