@@ -2,8 +2,9 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-import mysql.connector
+import pyodbc
 import re
+from nltk.stem import WordNetLemmatizer
 #%%
 def getallurl(zoekterm):
     page = requests.get('https://www.allrecipes.com/search?q='+zoekterm)
@@ -57,33 +58,37 @@ for url in urllist:
 instructions = ""
 instruction = ""
 description = ""
+server = 'powerbitrialserver.database.windows.net'
+database = 'PowerBItrial'
+username = 'bitestadmin'
+password = '{abcd12!$}'   
+driver= '{ODBC Driver 17 for SQL Server}'
 try:
-    connection = cnx = mysql.connector.connect(user="yc2304", 
-                                               password="abcd12!$", 
-                                               host="pythonbackend.mysql.database.azure.com", 
-                                               port=3306, 
-                                               database="pythonbackend", 
-                                               ssl_ca="{ca-cert filename}", 
-                                               ssl_disabled=False)
-    if connection.is_connected():
+    connection = pyodbc.connect('DRIVER='+driver+
+                                ';SERVER=tcp:'+server+
+                                ';PORT=1433;DATABASE='+database+
+                                ';UID='+username+';PWD='+ password)
+
+    if connection != 'NULL':
         # Here we start with creating a recipe table
-        db_Info = connection.get_server_info()
-        print("Connected to MySQL Server version ", db_Info)
+        #db_Info = connection.get_server_info()
+        #print("Connected to MySQL Server version ", db_Info)
         cursor = connection.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS recipes (\
-        RecipeID bigint NOT NULL AUTO_INCREMENT,\
-        RecipeTitle varchar(255),\
-        UserId bigint,\
-        PrepTime varchar(255),\
-        PrepText varchar(255),\
-        CookAttireId bigint,\
-        BBQId bigint,\
-        Rating double,\
-        Foto varchar(255),\
-        Intro varchar(255),\
-        Diet enum('Dessert', 'vis', 'vlees'),\
-        DateCreate datetime default now(),\
-        PRIMARY KEY(RecipeID));")
+        cursor.execute("""IF OBJECT_ID(N'recipes', N'U') IS NULL
+        CREATE TABLE recipes (
+                    RecipeID int IDENTITY(1,1) PRIMARY KEY,
+                    RecipeTitle nvarchar(255),
+                    UserId bigint, 
+                    PrepTime nvarchar(255),
+                    PrepText nvarchar(2000),
+                    CookAttireId bigint,
+                    BBQId bigint,
+                    Rating float,
+                    Foto nvarchar(255),
+                    Intro nvarchar(1000),
+                    [Diet]  nvarchar (255) NOT NULL CHECK ([Diet] IN('vlees', 'vis', 'vega')) DEFAULT 'vlees',
+                    DateCreate datetime);
+                    """)
         cursor.execute("select * from recipes")
         record = cursor.fetchall()
         print("You're connected to database: ", record)
@@ -115,10 +120,10 @@ try:
                 record = cursor.fetchall()
                 if df[0] not in [z[1] for z in record]: #mss geen dubbele loop nodig, aan csv vragem.
                     print('oke, nieuwe!')
-                    sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
-                    `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
-                    `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                        VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', now());"
+                    sqlcode = "INSERT INTO recipes ([RecipeTitle], [UserId],\
+                    [PrepTime], [PrepText], [CookAttireId], [BBQId],\
+                    [Rating], [Foto], [Intro], [Diet], [DateCreate])\
+                        VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', getdate());"
                     print(sqlcode)
                     cursor.execute(sqlcode) 
                     rows +=1
@@ -126,10 +131,10 @@ try:
                     print("HOHO, hetzelfde")
             else:
                 print("lege lijst, voeg toe")
-                sqlcode = "INSERT INTO `recipes` (`RecipeTitle`, `UserId`,\
-                    `PrepTime`, `PrepText`, `CookAttireId`, `BBQId`,\
-                    `Rating`, `Foto`, `Intro`, `Diet`, `DateCreate`)\
-                    VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', now());"
+                sqlcode = "INSERT INTO recipes ([RecipeTitle], [UserId],\
+                    [PrepTime], [PrepText], [CookAttireId], [BBQId],\
+                    [Rating], [Foto], [Intro], [Diet], [DateCreate])\
+                        VALUES ('"+ df[0] + "','"+ str(df[1]) + "','"+ df[2] + "','"+ df[3] + "','"+ str(df[4]) + "','"+ str(df[5]) + "','"+ str(df[6]) + "','"+ df[7] + "','" + df[8] + "','" +  df[9] + "', getdate());"
                 print(sqlcode)
                 cursor.execute(sqlcode)
                 rows +=1
@@ -139,35 +144,57 @@ try:
             instructions = ""
         
         #Here we start creatinge and filling an ingredient table
-        cursor.execute("CREATE TABLE IF NOT EXISTS ingredients (\
-        IngredientID bigint NOT NULL AUTO_INCREMENT,\
-        Name varchar(255),\
-        PRIMARY KEY(IngredientID));")
+        cursor.execute("""IF OBJECT_ID(N'ingredients', N'U') IS NULL
+        CREATE TABLE ingredients (
+        IngredientID int IDENTITY(1,1) PRIMARY KEY,
+        Name varchar(255));""")
         cursor.execute("select * from ingredients")
         record2 = cursor.fetchall()
         rows2 = len(record2)
         for url in urlrec:
-            recipecontent = readrecipecontent(url)
-            for ingredient in recipecontent[0]["recipeIngredient"]:
-                ingredientlist = re.split(',', ingredient)
-                ingredient_imp_list = re.split('\s', ingredientlist[0])
-                ingredient_imp = ingredient_imp_list[-1]
+            recipecontent = readrecipecontent(url)                
+            lemmatizer = WordNetLemmatizer()
+            for i in recipecontent[0]["recipeIngredient"]:
+                ingredientlist = re.split(',', i)
+                words = word_tokenize(ingredientlist[0])
+                lemmatized_words = [lemmatizer.lemmatize(word) for word in words]
+                q = nltk.pos_tag(lemmatized_words)
+                #print(q)
+                right_ing = []
+                for i in range(0, len(q)-1):
+                    if q[i+1][1] == "NN" and q[i][1]== "JJ":
+                        right_ing.append(q[i][0])
+                        right_ing.append(q[i+1][0])
+                    elif q[i+1][1] == "NN" and q[i][1] == "NN":
+                        right_ing.append(q[i][0])
+                        right_ing.append(q[i+1][0])
+                    elif q[i+1][1] == "JJ":
+                        right_ing.append(q[i+1][0])
+                    elif q[i+1][1] == "NN":
+                        right_ing.append(q[i+1][0])
+                if len(right_ing)>2:
+                    right_ing= right_ing[-2:]
+                    right_ing= ' '.join(right_ing)
+                else:
+                    right_ing = right_ing[-1]
+                print(right_ing)
                 if rows2 != 0:
                     cursor.execute("select * from ingredients")
                     record2 = cursor.fetchall()
-                    if ingredient_imp not in [z2[1] for z2 in record2]:
-                        print('nieuwe rij')
-                        sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                    VALUES ('" + ingredient_imp + "');"
+                    if right_ing not in [z2[1] for z2 in record2]:
+                        #print('nieuwe rij')
+                        sqlcode = "INSERT INTO ingredients ([Name])\
+                                    VALUES ('" + right_ing + "');"
                         #print(sqlcode)
                         cursor.execute(sqlcode) 
                         rows2 +=1
                     else:
-                        print("HOHO, hetzelfde")
+                        pass
+                        #print("HOHO, hetzelfde")
                 else:
-                    print("Lege lijst, voeg toe")
-                    sqlcode = "INSERT INTO `ingredients` (`Name`)\
-                                    VALUES ('" + ingredient_imp + "');"
+                    #print("Lege lijst, voeg toe")
+                    sqlcode = "INSERT INTO ingredients ([Name])\
+                                    VALUES ('" + right_ing + "');"
                         #print(sqlcode)
                     cursor.execute(sqlcode) 
                     rows2 +=1
