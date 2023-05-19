@@ -156,7 +156,8 @@ if connection != 'NULL':
     ingrepID int IDENTITY(1,1) PRIMARY KEY,
     RecipeID int FOREIGN KEY REFERENCES recipe (RecipeID),
     IngredientID int FOREIGN KEY REFERENCES ingredient (IngredientID),
-    Amount varchar(255)
+    Amount float,
+    Unit varchar(255)
     );""")
     #int FOREIGN KEY REFERENCES recipes(RecipeID)
     #int FOREIGN KEY REFERENCES ingredients(IngredientID)
@@ -164,10 +165,12 @@ if connection != 'NULL':
     record2 = cursor.fetchall()
     rows2 = len(record2)
     total_ing_list = []
+    total_amount = []
     for url in urlrec:
         recipecontent = readrecipecontent(url)                
         lemmatizer = WordNetLemmatizer()
         right_ing_list = []
+        amount_data_list = []
         for ing in recipecontent[0]["recipeIngredient"]:
             ingredientlist = re.split(',', ing)
             words = word_tokenize(ingredientlist[0])
@@ -177,43 +180,51 @@ if connection != 'NULL':
             right_ing_temp = []
             right_ing = []
             right_ing_name = [j[1] for j in q]
+            amount_data = []
             ele = ')'
             if len(right_ing_name) == 1:
                 words = ['1'] + words
                 #right_ing.append('1')
                 ingredient = words[1]
+                amount_data.append(words[0])
                 right_ing =words
             else:    
                 for i in range(0, len(right_ing_name)-1):
                     if right_ing_name[i+1] == "NN" and right_ing_name[i]== "CD" and len(right_ing_name) == 2:
                         #right_ing_temp.append(words[i])
                         right_ing.append(words[i])
+                        amount_data.append(words[i])
                     elif right_ing_name[i+1] == "NN" and right_ing_name[i]== "CD":
                         right_ing_temp.append(words[i])
                         right_ing_temp.append(words[i+1])
                         right_ing.append(right_ing_temp)
+                        amount_data.append(words[i])
                         right_ing_temp = []
                     elif right_ing_name[i+1] == "JJ" and right_ing_name[i] == "CD":
                         right_ing_temp.append(words[i])
                         right_ing_temp.append(words[i+1])
                         right_ing.append(right_ing_temp)
+                        amount_data.append(words[i])
                         right_ing_temp = []
                     elif right_ing_name[i] == "CD" and right_ing_name[i+2] == "CD":
                         temp_list = []
-                        for i in words:
-                            if i == ')':
-                                temp_list.append(i)
+                        for char in words:
+                            if char == ')':
+                                temp_list.append(char)
                                 right_ing.append(temp_list)
                                 temp_list = []
                             else:
-                                temp_list.append(i)
+                                temp_list.append(char)
                         right_ing.append(temp_list)
+                        amount_data.append(words[i])
                     elif right_ing_name[i] == "CD":
                         right_ing_temp.append(words[i])
                         right_ing.append(right_ing_temp)
                         right_ing_temp = []
+                        amount_data.append(words[i])
                     else:
                         right_ing.append(words[1:])
+                        amount_data.append('Null')
                         #right_ing_temp = []
             right_ing = " ".join(right_ing[0])
             if right_ing.find('( ') == 2:
@@ -250,13 +261,12 @@ if connection != 'NULL':
                 cursor.execute(sqlcode) 
                 rows2 +=1
             right_ing_list.append(right_ing)
+            amount_data_list.append(amount_data)
         total_ing_list.append(right_ing_list)
+        total_amount.append(amount_data_list)
         connection.commit()
     #Now finally we will include an intermediate table.
     
-    cursor.execute("select * from ingrep")
-    record5 = cursor.fetchall()
-    rows5 = len(record5)
     cursor.execute("select * from recipe")
     record3 = cursor.fetchall()
     rows2 = len(record2)
@@ -286,13 +296,35 @@ if connection != 'NULL':
             #ingrec_list.append(ingrec_list_temp[0])
             #ingrec_list_temp = []
     flat_list = [item for sublist in total_ing_list for item in sublist]
+    flat_amount_list = [item[0] for sublist in total_amount for item in sublist]
+    flat_unit_list = []
+    for i in range(0, len(flat_list)):
+        if 'pepper to taste' in flat_list[i]:
+            flat_unit_list.append('')
+        else:
+            flat_unit_list.append(flat_list[i].replace(flat_amount_list[i], ''))
+    
     for i in range(0, len(recipe_list)):
-            sqlcode = "INSERT INTO ingrec ([RecipeID], [IngredientID], [Amount])\
-                    VALUES ("+ str(recipe_list[i]) + ","+ str(ingrec_list[i]) + ",'"+ flat_list[i] + "');"
-                    #print(sqlcode)
+        cursor.execute("select * from ingrec")
+        record5 = cursor.fetchall()
+        rows5 = len(record5)
+        if rows5 != 0:
+            cursor.execute("select * from ingrec")
+            record5 = cursor.fetchall()
+            if [recipe_list[i], ingrec_list[i]] not in [[z5[1], z5[2]] for z5 in record5]:
+                sqlcode = "INSERT INTO ingrec ([RecipeID], [IngredientID], [Amount], [Unit])\
+                        VALUES ("+ str(recipe_list[i]) + ","+ str(ingrec_list[i]) + ","+ flat_amount_list[i] + ",'"+ flat_unit_list[i] +"');"
+                cursor.execute(sqlcode)
+                rows5 +=1
+            else:
+                pass
+            connection.commit()
+        else:  
+            sqlcode = "INSERT INTO ingrec ([RecipeID], [IngredientID], [Amount], [Unit])\
+                            VALUES ("+ str(recipe_list[i]) + ","+ str(ingrec_list[i]) + ","+ flat_amount_list[i] + ",'"+ flat_unit_list[i] +"');"
             cursor.execute(sqlcode)
-            connection.commit()  
-
+            rows5 +=1
+        connection.commit()
 print("MySQL connection is closed")
 
 cursor.close()
