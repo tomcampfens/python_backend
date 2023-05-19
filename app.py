@@ -30,39 +30,39 @@ def recipe():
     cursor.execute("select * from recipe")
     recipes = cursor.fetchall()
     df = pd.DataFrame.from_records(recipes)
-    result = df.to_json()
+    result = df.to_json(orient="records")
     parsed = json.loads(result)
     recjson = json.dumps(parsed, indent=4, default=str)
     print("MySQL connection is closed")
     cursor.close()
-    return result
+    return recjson
 
-@app.route("/ingredient", methods = ["GET","POST"])
+@app.route("/ingredients", methods = ["GET","POST"])
 def ingredient():
     conn = connection()
     cursor = conn.cursor()
     cursor.execute("select * from ingredient")
     ingredient = cursor.fetchall()
 #    df = pd.DataFrame.from_records(ingredient, columns=['IngredientID', 'Name'])
-    df = pd.DataFrame([list(row) for row in ingredient], columns=['IngredientID', 'Name'])
-    result = df.to_json()
+    df = pd.DataFrame.from_records(ingredient, columns=['IngredientID', 'Name'])
+    result = df.to_json(orient="records")
     parsed = json.loads(result)
     ingjson = json.dumps(parsed, indent=4, default=str)
     cursor.close()
-    return df
+    return ingjson
 
 @app.route("/ingrec", methods = ["GET","POST"])
 def ingredients():
     conn = connection()
     cursor = conn.cursor()
-    record = cursor.execute("select * from ingrec")
+    cursor.execute("select * from ingrec")
     ingredients = cursor.fetchall()
     df = pd.DataFrame(ingredients)
-    result = df.to_json()
+    result = df.to_json(orient="records")
     parsed = json.loads(result)
-    ingjson = json.dumps(parsed, indent=4, default=str)
+    ingrecjson = json.dumps(parsed, indent=4, default=str)
     cursor.close()
-    return ingjson
+    return ingrecjson
 
 #@app.route("/dump")
 #def dump():
